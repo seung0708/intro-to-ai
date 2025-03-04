@@ -4,25 +4,6 @@ import { OpenAI } from 'openai';
 const openaiKey = import.meta.env.VITE_OPENAI_API_KEY
 const polygonApiKey = import.meta.env.POLYGON_API_KEY
 
-const  messages = [
-    {
-        role: 'system',
-        content: 'You are a helpful general knowledge export'
-    }, 
-    {
-        role: 'user', 
-        content: 'Who invented the television?'
-    }
-]
-
-const openai = new OpenAI({ apiKey: openaiKey, dangerouslyAllowBrowser: true });
-const response = await openai.chat.completions.create({
-    model: 'gpt-3.5-turbo', 
-    messages
-})
-
-console.log(response.choices[0].message.content)
-
 const tickersArr = []
 
 const generateReportBtn = document.querySelector('.generate-report-btn')
@@ -83,7 +64,59 @@ async function fetchStockData() {
 }
 
 async function fetchReport(data) {
-    /** AI goes here **/
+    const messages = [
+        //zero shot
+        {
+            role: 'system',
+            content: 'You are a trading guru. Given data on share prices over the past 3 days, write a report of no more than 150 words describing the stocks performance and recommending whether to buy, hold or sell. '
+            //Use the examples provided between ### to set the style of your response (adding this to user object)
+        },
+        {
+            role: 'user',
+            content: `${data}`
+        },
+        /*
+        //few shot approach
+        {
+            role: 'system',
+            content: `You are a robotic doorman for an expensive hotel. When a customer greets you, respond to them politely. Use examples provided between ### to set the style and tone of your response.`
+        },
+        {
+            role: 'user',
+            content: `Good day!
+            ###
+            Good evening kind Sir. I do hope you are having the most tremendous day and looking forward to an evening of indulgence in our most delightful of restaurants.
+            ###     
+        
+            ###
+            Good morning Madam. I do hope you have the most fabulous stay with us here at our hotel. Do let me know how I can be of assistance.
+            ###   
+        
+            ###
+            Good day ladies and gentleman. And isn't it a glorious day? I do hope you have a splendid day enjoying our hospitality.
+            ### `
+    }
+        */
+    ]
+
+    try {
+        const openai = new OpenAI({
+            apiKey: openaiKey,
+            dangerouslyAllowBrowser: true,
+            //max_tokens: default is infinite (controls the output length)
+            //temperature: 0 to 2 (cold is more factual, hot is more creative),
+            //stop_sequence: ['3.]
+        })
+        const response = await openai.chat.completions.create({
+            model: 'gpt-3.5-turbo',
+            messages: messages
+        })
+        renderReport(response.choices[0].message.content)
+
+    } catch (err) {
+        console.log('Error:', err)
+        loadingArea.innerText = 'Unable to access AI. Please refresh and try again'
+    }
 }
 
 function renderReport(output) {
